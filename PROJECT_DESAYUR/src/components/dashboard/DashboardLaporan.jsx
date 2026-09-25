@@ -142,7 +142,21 @@ const prioritasBadge = {
 };
 
 export default function DashboardLaporan() {
-  const [laporanList, setLaporanList] = useState(initialLaporanData);
+  const [laporanList, setLaporanList] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('desa_laporan_list') || '[]');
+      if (saved.length > 0) {
+        const merged = [...saved];
+        initialLaporanData.forEach(item => {
+          if (!merged.some(m => m.id === item.id)) merged.push(item);
+        });
+        return merged;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return initialLaporanData;
+  });
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('semua');
   const [filterKategori, setFilterKategori] = useState('semua');
@@ -177,8 +191,8 @@ export default function DashboardLaporan() {
 
   // Action update status
   const handleUpdateStatus = (id, newStatus, tanggapanText = '') => {
-    setLaporanList(prev =>
-      prev.map(item => {
+    setLaporanList(prev => {
+      const updated = prev.map(item => {
         if (item.id === id) {
           return {
             ...item,
@@ -188,8 +202,14 @@ export default function DashboardLaporan() {
           };
         }
         return item;
-      })
-    );
+      });
+      try {
+        localStorage.setItem('desa_laporan_list', JSON.stringify(updated));
+      } catch (err) {
+        console.error(err);
+      }
+      return updated;
+    });
 
     if (selectedLaporan && selectedLaporan.id === id) {
       setSelectedLaporan(prev => ({

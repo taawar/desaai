@@ -125,7 +125,21 @@ function StatusBadge({ status }) {
 }
 
 export default function DashboardSurat() {
-  const [suratList, setSuratList] = useState(initialSuratData);
+  const [suratList, setSuratList] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('desa_surat_list') || '[]');
+      if (saved.length > 0) {
+        const merged = [...saved];
+        initialSuratData.forEach(item => {
+          if (!merged.some(m => m.id === item.id)) merged.push(item);
+        });
+        return merged;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return initialSuratData;
+  });
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('semua');
   const [selectedSurat, setSelectedSurat] = useState(null);
@@ -137,9 +151,15 @@ export default function DashboardSurat() {
   };
 
   const updateSuratStatus = (id, newStatus) => {
-    setSuratList(prev =>
-      prev.map(s => (s.id === id ? { ...s, status: newStatus } : s))
-    );
+    setSuratList(prev => {
+      const updated = prev.map(s => (s.id === id ? { ...s, status: newStatus } : s));
+      try {
+        localStorage.setItem('desa_surat_list', JSON.stringify(updated));
+      } catch (err) {
+        console.error(err);
+      }
+      return updated;
+    });
 
     if (selectedSurat && selectedSurat.id === id) {
       setSelectedSurat(prev => ({ ...prev, status: newStatus }));
